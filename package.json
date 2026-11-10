@@ -1,0 +1,14 @@
+{
+  "name": "ig-media-saver",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Save Instagram post and reel media for moodboards. Installable PWA with a small server.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
