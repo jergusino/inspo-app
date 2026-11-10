@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: ig-media-saver
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: ACCESS_TOKEN
+        generateValue: true

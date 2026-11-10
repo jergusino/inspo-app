@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e0e0e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="IG Saver">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+<title>IG Media Saver</title>
+</head>
+<body>
+<main>
+  <header><h1>IG Saver</h1></header>
+
+  <form id="form" class="row">
+    <input id="link" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false"
+           placeholder="Paste Instagram post or reel link" required>
+    <button id="go" type="submit" class="primary">Fetch</button>
+  </form>
+
+  <section id="auth" class="panel" hidden>
+    <p>Enter your access code once. It is stored on this device only.</p>
+    <form id="authForm" class="row">
+      <input id="code" type="password" autocomplete="current-password" placeholder="Access code">
+      <button type="submit" class="primary">Save</button>
+    </form>
+  </section>
+
+  <p id="status" role="status" aria-live="polite"></p>
+
+  <section id="result" class="panel" hidden>
+    <div class="meta"><span id="title"></span><span id="sub"></span></div>
+    <div id="thumbs"></div>
+    <div class="actions">
+      <button id="share" class="primary" hidden>Save to Photos</button>
+      <button id="zip" class="secondary">Download .zip</button>
+    </div>
+  </section>
+</main>
+
+<script src="vendor/jszip.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
