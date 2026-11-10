@@ -1,4 +1,4 @@
-// Tiny IndexedDB layer shared by the page and the service worker.
+// Local storage layer shared by the page and the service worker.
 const DB_NAME = 'igsaver', STORE = 'items';
 
 function dbOpen() {
@@ -31,19 +31,44 @@ function parseIg(text) {
 }
 function igKind(url) { return /\/reels?\//.test(url) ? 'Reel' : 'Post'; }
 
-// Returns 'saved' | 'dup' | null (no Instagram link found)
-async function saveLink(text, cover) {
+// Images become PNG; videos are kept as shared (MP4 from Instagram).
+async function normalizeMedia(file) {
+  if (!file || typeof file === 'string' || !file.size) return null;
+  if (file.type.startsWith('image/') && file.type !== 'image/png') {
+    try {
+      const bmp = await createImageBitmap(file);
+      const c = new OffscreenCanvas(bmp.width, bmp.height);
+      c.getContext('2d').drawImage(bmp, 0, 0);
+      return await c.convertToBlob({ type: 'image/png' });
+    } catch (e) { return file; }
+  }
+  return file;
+}
+function extFor(mime) {
+  const m = { 'image/png': 'png', 'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm' };
+  return m[mime] || (mime && mime.split('/')[1]) || 'bin';
+}
+
+// Returns { status: 'saved' | 'dup', item } or null when no Instagram link is found
+async function saveLink(text, file) {
   const url = parseIg(text);
   if (!url) return null;
+  const media = await normalizeMedia(file);
   const all = await dbAll();
   const existing = all.find(i => i.url === url);
   if (existing) {
-    if (cover && !existing.cover) { existing.cover = cover; await dbPut(existing); }
-    return 'dup';
+    if (media && !existing.media) {
+      Object.assign(existing, { media, mime: media.type, downloaded: false });
+      await dbPut(existing);
+    }
+    return { status: 'dup', item: existing };
   }
-  await dbPut({
+  const item = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    url, kind: igKind(url), cover: cover || null, created: Date.now()
-  });
-  return 'saved';
+    url, kind: igKind(url),
+    media, mime: media ? media.type : null,
+    downloaded: false, created: Date.now()
+  };
+  await dbPut(item);
+  return { status: 'saved', item };
 }

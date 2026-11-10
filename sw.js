@@ -1,5 +1,5 @@
 importScripts('db.js');
-const CACHE = 'igsaver-v1';
+const CACHE = 'igsaver-v2';
 const SHELL = ['./', 'index.html', 'db.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -17,18 +17,17 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   const url = new URL(req.url);
 
-  // Android share sheet -> this endpoint
+  // Android share sheet -> this endpoint (link and optional PNG/MP4 file)
   if (req.method === 'POST' && url.pathname.endsWith('/share-target')) {
     e.respondWith((async () => {
-      let status = null;
+      let status = 'nolink';
       try {
         const f = await req.formData();
         const text = [f.get('url'), f.get('text'), f.get('title')].filter(Boolean).join(' ');
-        const file = f.get('media');
-        status = await saveLink(text, file && file.size ? file : null);
-      } catch (err) { status = null; }
-      const q = status === 'saved' ? 'saved' : status === 'dup' ? 'dup' : 'nolink';
-      return Response.redirect(new URL('./?' + q, self.registration.scope).href, 303);
+        const r = await saveLink(text, f.get('media'));
+        status = r ? r.status : 'nolink';
+      } catch (err) { status = 'nolink'; }
+      return Response.redirect(new URL('./?' + status, self.registration.scope).href, 303);
     })());
     return;
   }
