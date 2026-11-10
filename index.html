@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e0e0e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<title>Inspo Saver</title>
+<style>
+  :root { --bg:#0e0e0e; --card:#1a1a1a; --line:#2a2a2a; --fg:#f2f2f2; --mute:#8a8a8a; --acc:#f2f2f2; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.4 system-ui,sans-serif;
+         padding:env(safe-area-inset-top) 12px calc(24px + env(safe-area-inset-bottom)); }
+  header { display:flex; align-items:center; justify-content:space-between; padding:16px 4px 10px; }
+  h1 { font-size:22px; margin:0; letter-spacing:-.02em; }
+  #count { color:var(--mute); font-size:14px; }
+  form { display:flex; gap:8px; margin:0 0 14px; }
+  input[type=text] { flex:1; min-width:0; background:var(--card); border:1px solid var(--line); color:var(--fg);
+         border-radius:12px; padding:12px 14px; font-size:15px; }
+  button { font:inherit; cursor:pointer; }
+  .add { background:var(--acc); color:#000; border:0; border-radius:12px; padding:0 16px; font-weight:600; }
+  #grid { columns:2; column-gap:10px; }
+  .card { break-inside:avoid; margin:0 0 10px; background:var(--card); border-radius:14px; overflow:hidden; border:1px solid var(--line); }
+  .cover { display:block; width:100%; aspect-ratio:4/5; object-fit:cover; background:#222; }
+  .ph { aspect-ratio:4/5; display:flex; align-items:center; justify-content:center; color:var(--mute);
+        font-size:14px; background:repeating-linear-gradient(45deg,#1d1d1d,#1d1d1d 10px,#222 10px,#222 20px); }
+  .bar { display:flex; align-items:center; justify-content:space-between; padding:6px 8px 6px 10px; font-size:12px; color:var(--mute); }
+  .bar .tag { text-transform:uppercase; letter-spacing:.06em; }
+  .bar div { display:flex; gap:2px; }
+  .bar button { background:none; border:0; color:var(--fg); padding:8px; border-radius:8px; font-size:13px; }
+  .bar button.del { color:#ff6b6b; }
+  #empty { text-align:center; color:var(--mute); padding:60px 20px; }
+  #toast { position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom)); transform:translate(-50%,20px);
+           background:var(--fg); color:#000; padding:10px 16px; border-radius:999px; font-size:14px; font-weight:600;
+           opacity:0; pointer-events:none; transition:.25s; }
+  #toast.show { opacity:1; transform:translate(-50%,0); }
+</style>
+</head>
+<body>
+<header><h1>Inspo</h1><span id="count"></span></header>
+
+<form id="addForm">
+  <input type="text" id="linkInput" placeholder="Paste Instagram link" autocomplete="off" inputmode="url">
+  <button class="add" type="submit">Save</button>
+</form>
+
+<div id="grid"></div>
+<div id="empty" hidden>Nothing saved yet.<br>In Instagram, tap Share on a post or reel and choose <b>Inspo</b>.</div>
+<input type="file" id="coverPicker" accept="image/*" hidden>
+<div id="toast"></div>
+
+<script src="db.js"></script>
+<script>
+const grid = document.getElementById('grid');
+const empty = document.getElementById('empty');
+const toastEl = document.getElementById('toast');
+const picker = document.getElementById('coverPicker');
+let coverTarget = null;
+let urls = [];
+
+function toast(msg) {
+  toastEl.textContent = msg; toastEl.classList.add('show');
+  setTimeout(() => toastEl.classList.remove('show'), 2200);
+}
+
+async function render() {
+  urls.forEach(URL.revokeObjectURL); urls = [];
+  const items = (await dbAll()).sort((a, b) => b.created - a.created);
+  grid.innerHTML = '';
+  empty.hidden = items.length > 0;
+  document.getElementById('count').textContent = items.length ? items.length + ' saved' : '';
+  for (const it of items) {
+    const card = document.createElement('div'); card.className = 'card';
+    const a = document.createElement('a'); a.href = it.url; a.target = '_blank'; a.rel = 'noopener';
+    if (it.cover) {
+      const img = document.createElement('img'); img.className = 'cover';
+      const u = URL.createObjectURL(it.cover); urls.push(u); img.src = u; img.alt = '';
+      a.appendChild(img);
+    } else {
+      const ph = document.createElement('div'); ph.className = 'ph'; ph.textContent = it.kind;
+      a.appendChild(ph);
+    }
+    const bar = document.createElement('div'); bar.className = 'bar';
+    bar.innerHTML = `<span class="tag">${it.kind}</span><div>
+      <button data-act="cover">${it.cover ? 'Change' : 'Add cover'}</button>
+      <button class="del" data-act="del">Delete</button></div>`;
+    bar.addEventListener('click', async e => {
+      const act = e.target.dataset.act;
+      if (act === 'cover') { coverTarget = it; picker.click(); }
+      if (act === 'del' && confirm('Delete this saved post?')) { await dbDel(it.id); render(); }
+    });
+    card.append(a, bar); grid.appendChild(card);
+  }
+}
+
+picker.addEventListener('change', async () => {
+  const f = picker.files[0];
+  if (f && coverTarget) { coverTarget.cover = f; await dbPut(coverTarget); render(); }
+  picker.value = ''; coverTarget = null;
+});
+
+document.getElementById('addForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const input = document.getElementById('linkInput');
+  const r = await saveLink(input.value);
+  if (r === 'saved') toast('Saved'); else if (r === 'dup') toast('Already saved'); else toast('No Instagram link found');
+  if (r) input.value = '';
+  render();
+});
+
+// Feedback after arriving from the share sheet
+const q = location.search.slice(1);
+if (q) {
+  toast({ saved: 'Saved', dup: 'Already saved', nolink: 'No Instagram link found' }[q] || '');
+  history.replaceState(null, '', location.pathname);
+}
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+render();
+</script>
+</body>
+</html>
