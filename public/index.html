@@ -8,16 +8,18 @@
 <meta name="apple-mobile-web-app-title" content="IG Saver">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/BricolageGrotesque-Medium.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
 <title>IG Media Saver</title>
 </head>
 <body>
 <main>
-  <header><h1>IG Saver</h1></header>
+  <header><img class="logo" src="logo.svg" alt="Jergušino" width="570" height="112"><h1>IG Saver</h1></header>
 
   <form id="form" class="row" novalidate>
     <input id="link" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false"
-           placeholder="Paste Instagram post or reel link">
+           placeholder="Paste a post or reel link">
     <button id="go" type="submit" class="primary">Fetch</button>
   </form>
 

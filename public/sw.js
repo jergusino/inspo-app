@@ -1,6 +1,6 @@
 'use strict';
 // Caches the app shell only. API calls always go to the network.
-const CACHE = 'ig-media-saver-v1';
+const CACHE = 'ig-media-saver-v2';
 const SHELL = [
   './',
   'index.html',
@@ -8,6 +8,11 @@ const SHELL = [
   'app.js',
   'vendor/jszip.min.js',
   'manifest.webmanifest',
+  'logo.svg',
+  'favicon.svg',
+  'fonts/BricolageGrotesque-Medium.woff2',
+  'fonts/BricolageGrotesque-ExtraBold.woff2',
+  'fonts/DMMono-Regular.woff2',
   'icon-192.png',
   'icon-512.png',
 ];
